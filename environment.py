@@ -1,7 +1,6 @@
 import numpy as np
 import vacuum
-from HillClimbingAgent import HillClimbingAgent
-from SimulatedAnnealing import SimulatedAnnealing
+from MDPAgent import MDPAgent;
 
 class environment():
     #creates environment
@@ -10,19 +9,12 @@ class environment():
                [0,0,0,0],
                [0,0,0,0],
                [0,0,0,0]]
-    # different testing env
-    def set_HC_env(self):
-        self.env = [[0,3,2,0],
-               [0,0,0,0],
-               [0,4,6,8],
-               [7,9,0,10]]
     
-    # different testing env
-    def set_SA_env(self):
-        self.env = [[0,3,2,0],
-               [3,6,0,0],
-               [5,0,6,8],
-               [4,9,0,10]]
+    def set_MDP_env(self):
+        self.env = [[0,0,0,0],
+               [0,'X',0,0],
+               [0,0,0,0],
+               [0,-1,0,10]]
         
     # inserts vacuum 
     def insert_vacuum(self, V, row, col):
@@ -42,23 +34,27 @@ class environment():
             print() # newline
 
     # shows perceptible squares from where the vacuum is
-    def get_percept(self, V):
+    def get_valid_states(self, V):
         row = V.row
         col = V.col
 
         curr = self.env[row][col]
-        neighbors = {}
-        #check if valid move, if not, it isn't added to percept. 
+        states = {}
+        #check if valid move, if not, it isn't added. 
         if row > 0:
-            neighbors['Up'] = self.env[row - 1][col]
+            if self.env[row - 1][col] != 'X':
+                neighbors['Up'] = self.env[row - 1][col]
         if row < 3:
-            neighbors['Down'] = self.env[row + 1][col]
+            if self.env[row + 1][col] != 'X':
+                neighbors['Down'] = self.env[row + 1][col]
         if col > 0:
-            neighbors['Left'] = self.env[row][col - 1]
+            if self.env[row][col - 1] != 'X':
+                neighbors['Left'] = self.env[row][col - 1]
         if col < 3:
-            neighbors['Right'] = self.env[row][col + 1]
+            if self.env[row][col + 1] != 'X':
+                neighbors['Right'] = self.env[row][col + 1]
         
-        return curr, neighbors
+        return curr, states
 
     # actually moves the vacuum 
     def move(self, V, direction):
@@ -76,49 +72,6 @@ class environment():
 # main statement just to prove that it works 
 if __name__ == "__main__":
     env = environment()
-    env.set_HC_env()
-    V = HillClimbingAgent(env)
+    env.set_MDP_env()
+    V = MDPAgent(env)
     env.insert_vacuum(V, 0,3)
-
-    #WORKING HILL CLIMB ALGORITHM.
-    print("\033[31mRunning Hill Climbing Algorithm:\033[0m",end=" ")
-    completed = False
-    while completed == False:
-        print("Current location:", V.row, V.col)
-        env.draw_environment()
-        print()
-        curr, neighbors = env.get_percept(V)
-        direction = V.choose_move(curr, neighbors)
-        if direction =='NoOp':
-            print("Hill climbing maximum found at:",V.row, V.col)
-            completed = True # dirt max found
-        else:
-            print("Moved", direction)
-            env.move(V,direction)
-    
-    envSA = environment()
-    envSA.set_SA_env()
-    V_sa = SimulatedAnnealing(env)
-    envSA.insert_vacuum(V_sa, 0, 3)
-
-    #WORKING SIMULATED ANNEALING ALGORITHM
-    print("\033[31mRunning Simulated Annealing Algorithm:\033[0m",end=" ")
-    completedSA = False
-    t = 1
-    while completedSA == False:
-        #print current environment state
-        print("Current location:", V_sa.row, V_sa.col)
-        envSA.draw_environment()
-        print()
-
-        #Run simulated annealing once
-        curr, neighbors = envSA.get_percept(V_sa)
-        direction = V_sa.choose_move(curr, neighbors, t)
-        if direction == 'Highest Found':
-            print("Simulated annealing maximum found at:",V_sa.row, V_sa.col)
-            completedSA = True
-        else:
-            print()
-            print("Moved", direction)
-            env.move(V_sa, direction)
-        t += 1
