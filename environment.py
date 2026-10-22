@@ -1,6 +1,8 @@
 import numpy as np
 import vacuum
 from MDPAgent import MDPAgent;
+from aima.utils import print_table
+import time
 
 class environment():
     #creates environment
@@ -43,21 +45,24 @@ class environment():
         #check if valid move, if not, it isn't added. 
         if row > 0:
             if self.env[row - 1][col] != 'X':
-                neighbors['Up'] = self.env[row - 1][col]
+                states['Up'] = self.env[row - 1][col]
         if row < 3:
             if self.env[row + 1][col] != 'X':
-                neighbors['Down'] = self.env[row + 1][col]
+                states['Down'] = self.env[row + 1][col]
         if col > 0:
             if self.env[row][col - 1] != 'X':
-                neighbors['Left'] = self.env[row][col - 1]
+                states['Left'] = self.env[row][col - 1]
         if col < 3:
             if self.env[row][col + 1] != 'X':
-                neighbors['Right'] = self.env[row][col + 1]
+                states['Right'] = self.env[row][col + 1]
         
         return curr, states
 
     # actually moves the vacuum 
     def move(self, V, direction):
+        _, states = self.get_valid_states(V)
+        if direction not in states:
+            return
         if direction == 'Up':
             V.row -= 1
         if direction == 'Down':
@@ -71,7 +76,28 @@ class environment():
 
 # main statement just to prove that it works 
 if __name__ == "__main__":
-    env = environment()
-    env.set_MDP_env()
-    V = MDPAgent(env)
-    env.insert_vacuum(V, 0,3)
+
+    living_costs = [-0.05, -2, 2]
+    # living_costs = [-0.05]
+    for cost in living_costs:
+        time.sleep(4)
+        env = environment()
+        env.set_MDP_env()
+        print("Cost:", cost)
+        V = MDPAgent(env, cost)
+        print_table(V.mdp.to_arrows(V.policy))
+
+        env.insert_vacuum(V, 0,3)
+
+        for i in range(15): #arbitrary max number of steps to not have it run forever
+            action = V.choose_move(env)
+            env.draw_environment()
+            time.sleep(1)
+            print("_______________")
+            if action is None:
+                print("reached end")
+                print()
+                break
+            
+            env.move(V,action)
+
